@@ -2,6 +2,14 @@ name: "01_IAMRoles"
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
 jobs:
   Plan_Dev:
     if: github.ref == 'refs/heads/FeatureBranch1'
@@ -10,35 +18,43 @@ jobs:
       path: IAMRoles
       tf_vars_file: dev.tfvars
       gh_environment: dev
-    secrets:
-      cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
   Deploy_Dev:
     needs: Plan_Dev
-    uses: RekhuGopal/gitreusableflows/.github/workflows/aws_tf_appy.yml@FeatureBranch1
+    uses: RekhuGopal/gitreusableflows/.github/workflows/aws_tf_apply.yml@FeatureBranch1
     with:
       path: IAMRoles
       tf_vars_file: dev.tfvars
       gh_environment: dev
-    secrets:
-      cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-  Plan_Uat:
+    steps:
+      - name: Configure AWS credentials (OIDC) - Dev Account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.DEV_ACCOUNT_ID }}:role/OrganizationAccountAccessRole
+          role-session-name: GitHub-OIDC-TERRAFORM
+          aws-region: ${{ secrets.AWS_REGION }}
+
+  Plan_Prod:
     if: github.ref == 'refs/heads/main'
     uses: RekhuGopal/gitreusableflows/.github/workflows/aws_tf_plan.yml@main
     with:
       path: IAMRoles
-      tf_vars_file: uat.tfvars
-      gh_environment: uat
-    secrets:
-      cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      tf_vars_file: prod.tfvars
+      gh_environment: prod
 
-  Deploy_Uat:
-    needs: Plan_Uat
-    uses: RekhuGopal/gitreusableflows/.github/workflows/aws_tf_appy.yml@main
+  Deploy_Prod:
+    needs: Plan_Prod
+    uses: RekhuGopal/gitreusableflows/.github/workflows/aws_tf_apply.yml@main
     with:
       path: IAMRoles
-      tf_vars_file: uat.tfvars
-      gh_environment: uat
-    secrets:
-      cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      tf_vars_file: prod.tfvars
+      gh_environment: prod
+
+    steps:
+      - name: Configure AWS credentials (OIDC) - Prod Account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.PROD_ACCOUNT_ID }}:role/OrganizationAccountAccessRole
+          role-session-name: GitHub-OIDC-TERRAFORM
+          aws-region: ${{ secrets.AWS_REGION }}
