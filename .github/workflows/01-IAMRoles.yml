@@ -45,7 +45,7 @@ jobs:
 
   Deploy_Prod:
     needs: Plan_Prod
-    uses: RekhuGopal/gitreusableflows/.github/workflows/aws_tf_apply.yml@main
+    uses: marufaus/ReusableWorkflow123/.github/workflows/aws_tf_apply.yml@main
     with:
       path: IAMRoles
       tf_vars_file: prod.tfvars
