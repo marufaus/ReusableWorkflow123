@@ -35,7 +35,7 @@ jobs:
           role-session-name: GitHub-OIDC-TERRAFORM
           aws-region: ${{ secrets.AWS_REGION }}
 
-  Plan_Uat:
+  Plan_Prod:
     if: github.ref == 'refs/heads/main'
     uses: marufaus/ReusableWorkflow123/.github/workflows/aws_tf_plan.yml@main
     with:
@@ -43,8 +43,8 @@ jobs:
       tf_vars_file: prod.tfvars
       gh_environment: prod
 
-  Deploy_Uat:
-    needs: Plan_Uat
+  Deploy_Prod:
+    needs: Plan_Prod
     uses: marufaus/ReusableWorkflow123/.github/workflows/aws_tf_apply.yml@main
     with:
       path: S3Bucket
@@ -55,6 +55,6 @@ jobs:
       - name: Configure AWS credentials (OIDC) - UAT Account
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.UAT_ACCOUNT_ID }}:role/OrganizationAccountAccessRole
+          role-to-assume: arn:aws:iam::${{ secrets.PROD_ACCOUNT_ID }}:role/OrganizationAccountAccessRole
           role-session-name: GitHub-OIDC-TERRAFORM
           aws-region: ${{ secrets.AWS_REGION }}
