@@ -1,14 +1,13 @@
-### Reusable workflow to download terraform artifact built by `az_tf_plan` and apply the artifact/plan ###
-name: "Apply_TF_Plan"
+name: "Build_TF_Plan"
 on:
   workflow_call:
     inputs:
       path:
-        description: 'Specifies the path of the root terraform module.'
+        description: 'Specifies the path of the root Terraform module.'
         required: true
         type: string
       tf_version:
-        description: 'Specifies version of Terraform to use. e.g: 1.1.0 Default=latest.'
+        description: 'Specifies the Terraform version to use. e.g., 1.1.0 (default = latest).'
         required: false
         type: string
         default: latest
@@ -21,23 +20,31 @@ on:
         description: 'Specifies the Terraform TFVARS file.'
         required: true
         type: string
-    secrets:
-      cli_config_credentials_token:
-        description: 'cli config credentials token'
-        required: true
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  apply-plan:
+  build-plan:
     runs-on: ubuntu-latest
     environment: ${{ inputs.gh_environment }}
     defaults:
       run:
         shell: bash
         working-directory: ${{ inputs.path }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3.1.0
-        
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: GitHub-OIDC-TERRAFORM
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Change file name
         run: | 
           mv ${{ github.workspace }}/${{ inputs.path }}/${{ inputs.gh_environment }}.tfvars  ${{ github.workspace }}/${{ inputs.path }}/${{ inputs.gh_environment }}.auto.tfvars 
@@ -46,12 +53,11 @@ jobs:
         uses: hashicorp/setup-terraform@v2.0.2
         with:
           terraform_version: ${{ inputs.tf_version }}
-          cli_config_credentials_token: ${{ secrets.cli_config_credentials_token }}
 
       - name: Terraform Init
         id: init
         run: terraform init
-      
+
       - name: Terraform Validate
         id: validate
         run: terraform validate
@@ -64,6 +70,3 @@ jobs:
       - name: Terraform Plan Status
         if: steps.plan.outcome == 'failure'
         run: exit 1
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
