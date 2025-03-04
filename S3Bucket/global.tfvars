@@ -1,0 +1,2 @@
+
+bucket = "globalcloudqucikpocstestingbucket123"
