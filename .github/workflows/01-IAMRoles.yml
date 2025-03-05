@@ -13,7 +13,7 @@ env:
 jobs:
   Plan_Dev:
     if: github.ref == 'refs/heads/FeatureBranch1'
-    uses: marufaus/ReusableWorkflow123/.github/workflows/aws_tf_plan.yml@FeatureBranch1
+    uses: marufaus/ReusableWorkflow123/.github/workflows/aws_tf_plan.yml@FeatureBranch2
     with:
       path: IAMRoles
       tf_vars_file: dev.tfvars
@@ -21,7 +21,7 @@ jobs:
 
   Deploy_Dev:
     needs: Plan_Dev
-    uses: marufaus/ReusableWorkflow123/.github/workflows/aws_tf_apply.yml@FeatureBranch1
+    uses: marufaus/ReusableWorkflow123/.github/workflows/aws_tf_apply.yml@FeatureBranch2
     with:
       path: IAMRoles
       tf_vars_file: dev.tfvars
